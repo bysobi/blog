@@ -86,14 +86,16 @@ class Post extends \yii\db\ActiveRecord
         // Remove all exists relations.
         CategoryPosts::deleteAll(['post_id' => $this->id]);
 
-        $listIds = [];
-        foreach ($this->category as $categoryId) {
-            $listIds[] = [$this->id, $categoryId];
-        }
+        if (is_array($this->category) && !empty($this->category)) {
+            $listIds = [];
+            foreach ($this->category as $categoryId) {
+                $listIds[] = [$this->id, $categoryId];
+            }
 
-        // Batch insert all records in DB.
-        self::getDb()->createCommand()
-            ->batchInsert(CategoryPosts::tableName(), ['post_id', 'category_id'], $listIds)->execute();
+            // Batch insert all records in DB.
+            self::getDb()->createCommand()
+                ->batchInsert(CategoryPosts::tableName(), ['post_id', 'category_id'], $listIds)->execute();
+        }
 
         parent::afterSave($insert, $changedAttributes);
     }
