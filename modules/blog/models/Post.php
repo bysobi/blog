@@ -3,9 +3,8 @@
 namespace app\modules\blog\models;
 
 use Yii;
-use app\modules\admin\models\Category;
-use yii\helpers\ArrayHelper;
-use creocoder\taggable\TaggableBehavior;
+use yii\behaviors\TimestampBehavior;
+
 /**
  * This is the model class for table "post".
  *
@@ -13,24 +12,21 @@ use creocoder\taggable\TaggableBehavior;
  * @property string $title
  * @property string $text
  * @property string $description
- * @property integer $category_id
  * @property string $img
+ * @property integer $status
  * @property integer $created_at
  * @property integer $updated_at
+ *
+ * @property CategoryPosts[] $categoryPosts
  */
 class Post extends \yii\db\ActiveRecord
 {
-    public function behaviors()
-    {
-        return [
-            TaggableBehavior::className(),
-        ];
-    }
-    public function getCategory()
-    {
-        return $this->hasMany(Category::className(), ['id' => 'id_category'])
-            ->viaTable('category_post', ['id_post' => 'id']);
-    }
+    /**
+     * List of category ids.
+     *
+     * @var array
+     */
+    protected $category = [];
 
     /**
      * @inheritdoc
@@ -39,39 +35,19 @@ class Post extends \yii\db\ActiveRecord
     {
         return 'post';
     }
-    public $tagstest = [];
-    public function transactions()
-    {
-        return [
-            self::SCENARIO_DEFAULT => self::OP_ALL,
-        ];
-    }
-    public static function find()
-    {
-        return new PostQuery(get_called_class());
-    }
-    public function getCategoryList()
-    {
-        return ArrayHelper::map(Category::find()->all(), 'id', 'title');
-    }
-    public function beforeSave($insert) {
-        var_dump($this->tagstest);
-        die;
-        $post = new Post();
 
-        $post->tagNames = $this->tagstest
-        return parent::beforeSave($insert);
-    }
     /**
      * @inheritdoc
      */
     public function rules()
     {
         return [
-            [['title', 'text', 'description',  'img', 'created_at', 'updated_at'], 'required'],
-            [['title', 'text', 'description', 'img'], 'string'],
-            [['created_at', 'updated_at'], 'integer'],
-            ['tagstest', 'safe'],
+            [['title', 'text', 'description', 'img', 'created_at', 'updated_at'], 'required'],
+            [['text', 'description'], 'string'],
+            [['status', 'created_at', 'updated_at'], 'integer'],
+            [['title', 'img'], 'string', 'max' => 128],
+
+            [['category'], 'safe'],
         ];
     }
 
@@ -85,20 +61,66 @@ class Post extends \yii\db\ActiveRecord
             'title' => 'Title',
             'text' => 'Text',
             'description' => 'Description',
-           
             'img' => 'Img',
+            'status' => 'Status',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
     }
-}
-use creocoder\taggable\TaggableQueryBehavior;
-class PostQuery extends \yii\db\ActiveQuery
-{
+
+    /**
+     * @return array
+     */
     public function behaviors()
     {
         return [
-            TaggableQueryBehavior::className(),
+            TimestampBehavior::className(),
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function afterSave($insert, $changedAttributes)
+    {
+        // Remove all exists relations.
+        CategoryPosts::deleteAll(['post_id' => $this->id]);
+
+        $listIds = [];
+        foreach ($this->category as $categoryId) {
+            $listIds[] = [$this->id, $categoryId];
+        }
+
+        // Batch insert all records in DB.
+        self::getDb()->createCommand()
+            ->batchInsert(CategoryPosts::tableName(), ['post_id', 'category_id'], $listIds)->execute();
+
+        parent::afterSave($insert, $changedAttributes);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCategoryPosts()
+    {
+        return $this->hasMany(CategoryPosts::className(), ['post_id' => 'id']);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCategory()
+    {
+        return ArrayHelper::getColumn(
+            $this->getCategoryPosts()->all(), 'category_id'
+        );
+    }
+
+    /**
+     * @param $categoryIds
+     */
+    public function setCategory($categoryIds)
+    {
+        $this->category = (array) $categoryIds;
     }
 }

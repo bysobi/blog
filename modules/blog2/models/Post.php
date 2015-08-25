@@ -8,6 +8,7 @@ use yii\web\UploadedFile;
 use yii\behaviors\TimeStampBehavior;
 use yii\db\ActiveRecord;
 use yii\db\Expression;
+
 /**
  * This is the model class for table "post".
  *
@@ -19,9 +20,10 @@ use yii\db\Expression;
  */
 class Post extends \yii\db\ActiveRecord
 {
-    public $image;   
+    public $image;
     public $string;
     public $filename;
+
     /**
      * @inheritdoc
      */
@@ -39,9 +41,10 @@ class Post extends \yii\db\ActiveRecord
                     ActiveRecord::EVENT_BEFORE_INSERT => ['created_at', 'updated_at'],
                     ActiveRecord::EVENT_BEFORE_UPDATE => ['updated_at'],
                 ],
-         ],
+            ],
         ];
     }
+
     /**
      * @inheritdoc
      */
@@ -54,6 +57,7 @@ class Post extends \yii\db\ActiveRecord
             [['created_at', 'updated_at'], 'integer'],
         ];
     }
+
     /**
      * @inheritdoc
      */
@@ -66,42 +70,39 @@ class Post extends \yii\db\ActiveRecord
             'img' => 'Image',
             'description' => 'Description',
             'category_id' => 'Category',
-            'category.title' => 'Category',
-
         ];
     }
 
     public function getCategory()
     {
-       return $this->hasOne(Category::className(),['id'=>'category_id']);
+        return $this->hasOne(Category::className(), ['id' => 'category_id']);
     }
 
-  /*  public function getActiveCategory() 
-    {
-       return $this->getCategory()->getActive();
-    }*/
+    /*  public function getActiveCategory()
+      {
+         return $this->getCategory()->getActive();
+      }*/
 
-    public function beforeSave($insert) {
-        if($this->isNewRecord){
+    public function beforeSave($insert)
+    {
+        if ($this->isNewRecord) {
             $this->string = substr(uniqid('img'), 0, 12);
-            $this->image = UploadedFile::getInstance($this,'img');
+            $this->image = UploadedFile::getInstance($this, 'img');
             $this->filename = 'uploads/images/' . $this->string . '.' . $this->image->extension;
-            if($this->image) {
-            $this->image->saveAs($this->filename);
-            $this->img = '/' . $this->filename;
+            if ($this->image) {
+                $this->image->saveAs($this->filename);
+                $this->img = '/' . $this->filename;
             }
-        }
-        else{
-            $this->image = UploadedFile::getInstance($this,'img');
-            if($this->image){
+        } else {
+            $this->image = UploadedFile::getInstance($this, 'img');
+            if ($this->image) {
                 $this->image->saveAs(substr($this->img, 1));
             }
 
         }
 
         return parent::beforeSave($insert);
+    }
 
-    } 
 
-    
 }
