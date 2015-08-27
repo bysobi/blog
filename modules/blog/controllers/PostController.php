@@ -3,13 +3,14 @@
 namespace app\modules\blog\controllers;
 
 use Yii;
-use app\modules\admin\models\Category;
+#use app\modules\admin\models\Category;
+use app\modules\blog\models\Category;
 use app\modules\blog\models\Post;
 use app\modules\blog\models\PostSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-use creocoder\taggable\TaggableBehavior;
+
 /**
  * PostController implements the CRUD actions for Post model.
  */
@@ -63,15 +64,12 @@ class PostController extends Controller
        
         $model = new Post();
 
-        if ($model->load(Yii::$app->request->post())) {
-
-            $post = new Post();
-            $post->tagNames = ['foo', 'bar', 'baz'];
-            $model->save();
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
             return $this->redirect(['view', 'id' => $model->id]);
         } else {
             return $this->render('create', [
                 'model' => $model,
+                'category' => Category::find()->all(),
             ]);
         }
     }
@@ -91,6 +89,7 @@ class PostController extends Controller
         } else {
             return $this->render('update', [
                 'model' => $model,
+                'category' => Category::find()->all(),
             ]);
         }
     }

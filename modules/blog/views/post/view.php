@@ -2,6 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\DetailView;
+use app\modules\blog\models\CategoryPosts;
 
 /* @var $this yii\web\View */
 /* @var $model app\modules\blog\models\Post */
@@ -25,18 +26,24 @@ $this->params['breadcrumbs'][] = $this->title;
         ]) ?>
     </p>
 
-    <?= DetailView::widget([
-        'model' => $model,
-        'attributes' => [
-            'id',
-            'title:ntext',
-            'text:ntext',
-            'description:ntext',
-            'category_id',
-            'img:ntext',
-            'created_at',
-            'updated_at',
-        ],
-    ]) ?>
+    <div>
+        <?= $model->text ?>
+
+        <div class="tags">
+            <?php
+            $categories = [];
+            foreach($model->getCategoryPosts()->all() as $postCat) {
+                /**
+                 * @var $postCat app\modules\blog\models\CategoryPosts
+                 */
+                $category = $postCat->getCategory()->one();
+                $categories[] = $category->title;
+            }
+
+            ?>
+
+           Categories: <?= implode(', ', $categories) ?>
+        </div>
+    </div>
 
 </div>

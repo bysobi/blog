@@ -4,6 +4,8 @@ namespace app\modules\blog\models;
 
 use Yii;
 use yii\behaviors\TimestampBehavior;
+use yii\helpers\ArrayHelper;
+
 
 /**
  * This is the model class for table "post".
@@ -42,11 +44,10 @@ class Post extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'text', 'description', 'img', 'created_at', 'updated_at'], 'required'],
+            [['title', 'text', 'description'], 'required'],
             [['text', 'description'], 'string'],
-            [['status', 'created_at', 'updated_at'], 'integer'],
+            [['status'], 'integer'],
             [['title', 'img'], 'string', 'max' => 128],
-
             [['category'], 'safe'],
         ];
     }
